@@ -1,4 +1,4 @@
-Just put the jar in neo4j-server/lib and add this to the server properties file
+Just put the jar (dist/test-delete-db-extension-1.0-SNAPSHOT.jar) into neo4j-server/lib and add this to the server properties file
 
     org.neo4j.server.thirdparty_jaxrs_classes=org.neo4j.server.extension.test.delete=/cleandb
     org.neo4j.server.thirdparty.delete.key=secret-key
