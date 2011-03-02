@@ -32,6 +32,7 @@ public class DeleteDatabaseTest {
     private static final String HOSTNAME = "localhost";
     private static final int MANY_NODES = 1500;
     private static final int FEW_NODES = 500;
+    private static final String CONTEXT_PATH = "cleandb";
 
     @BeforeClass
     public static void startServerWithACleanDb() {
@@ -80,7 +81,7 @@ public class DeleteDatabaseTest {
 
     @Test
     public void deleteWithWrongKey() throws Exception {
-        ClientResponse response = Client.create().resource(createDeleteURI(PORT, "wrong-key")).delete(ClientResponse.class);
+        ClientResponse response = Client.create().resource(createDeleteURI("wrong-key")).delete(ClientResponse.class);
         assertEquals(ClientResponse.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }
 
@@ -88,7 +89,7 @@ public class DeleteDatabaseTest {
     public void deleteWithFewNodes() throws Exception {
         createData(getGraphDb(), FEW_NODES);
         assertEquals(FEW_NODES +1, getNumberOfNodes(getGraphDb()));
-        ClientResponse response = Client.create().resource(createDeleteURI(PORT, "secret-key")).delete(ClientResponse.class);
+        ClientResponse response = Client.create().resource(createDeleteURI("secret-key")).delete(ClientResponse.class);
         assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(1, getNumberOfNodes(getGraphDb()));
     }
@@ -96,13 +97,13 @@ public class DeleteDatabaseTest {
     public void deleteWithManyNodes() throws Exception {
         createData(getGraphDb(), MANY_NODES);
         assertEquals(MANY_NODES+1, getNumberOfNodes(getGraphDb()));
-        ClientResponse response = Client.create().resource(createDeleteURI(PORT, "secret-key")).delete(ClientResponse.class);
+        ClientResponse response = Client.create().resource(createDeleteURI("secret-key")).delete(ClientResponse.class);
         assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(1, getNumberOfNodes(getGraphDb()));
     }
 
-    private String createDeleteURI(int port, String key) {
-        return String.format(neoServer.baseUri().toString() + "test/%s", key);
+    private String createDeleteURI(String key) {
+        return String.format(neoServer.baseUri().toString()  + "%s/%s", CONTEXT_PATH, key);
     }
 
     private void createData(AbstractGraphDatabase db, int max) {
