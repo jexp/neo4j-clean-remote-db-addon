@@ -6,11 +6,11 @@ package org.neo4j.server.extension.test.delete;
  */
 
 import com.sun.jersey.api.core.ResourceConfig;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.neo4j.graphdb.*;
-import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.server.database.Database;
@@ -25,7 +25,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,12 +33,15 @@ import java.util.logging.Logger;
 @Path("/")
 public class DeleteDatabaseResource {
 
+    private static final String CONFIG_DELETE_AUTH_KEY = "org.neo4j.server.thirdparty.delete.key";
     private final Database database;
-    private ResourceConfig config;
+    private ResourceConfig resourceConfig;
+    private Configuration config;
     private Logger log = Logger.getLogger(DeleteDatabaseResource.class.getName());
 
-    public DeleteDatabaseResource(@Context Database database, @Context ResourceConfig config) {
+    public DeleteDatabaseResource(@Context Database database, @Context ResourceConfig resourceConfig, @Context Configuration config) {
         this.database = database;
+        this.resourceConfig = resourceConfig;
         this.config = config;
     }
 
@@ -48,12 +50,13 @@ public class DeleteDatabaseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response hello(@PathParam("key") String deleteKey) {
         AbstractGraphDatabase graph = database.graph;
-        Object configKey = graph.getConfig().getParams().get("delete-key");
+        String configKey = config.getString(CONFIG_DELETE_AUTH_KEY);
         if (deleteKey == null || configKey == null || !deleteKey.equals(configKey)) {
             return Response.status(Status.UNAUTHORIZED).build();
         }
         try {
-            Map<String, Object> result = cleanDbDirectory();
+            long nodes = getNumberOfNodes(graph);
+            Map<String, Object> result = nodes > 1000 ? cleanDbDirectory(database) : new Neo4jDatabaseCleaner(graph).cleanDb();
             log.warning("Deleted Database: " + result);
             return Response.status(Status.OK).entity(JSONObject.toJSONString(result)).build();
         } catch (Exception e) {
@@ -61,7 +64,11 @@ public class DeleteDatabaseResource {
         }
     }
 
-    private Map<String, Object> cleanDbDirectory() throws IOException {
+    private long getNumberOfNodes(AbstractGraphDatabase graph) {
+        return graph.getConfig().getGraphDbModule().getNodeManager().getNumberOfIdsInUse(Node.class);
+    }
+
+    private Map<String, Object> cleanDbDirectory(Database database) throws IOException {
         String storeDir = database.graph.getStoreDir();
         Map params = getAndFilterParams();
         database.shutdown();
@@ -95,48 +102,4 @@ public class DeleteDatabaseResource {
         System.out.println("params = " + params);
         return params;
     }
-
-    public Map<String, Object> cleanDb(GraphDatabaseService graphDatabaseService) {
-        Map<String, Object> result = new HashMap<String, Object>();
-        Transaction tx = graphDatabaseService.beginTx();
-        try {
-            removeNodes(graphDatabaseService, result);
-            clearIndex(graphDatabaseService, result);
-            tx.success();
-        } finally {
-            tx.finish();
-        }
-        return result;
-    }
-
-    private void removeNodes(GraphDatabaseService graphDatabaseService, Map<String, Object> result) {
-        Node refNode = graphDatabaseService.getReferenceNode();
-        int nodes = 0, relationships = 0;
-        for (Node node : graphDatabaseService.getAllNodes()) {
-            for (Relationship rel : node.getRelationships(Direction.OUTGOING)) {
-                rel.delete();
-                relationships++;
-            }
-            if (!refNode.equals(node)) {
-                node.delete();
-                nodes++;
-            }
-        }
-        result.put("nodes", nodes);
-        result.put("relationships", relationships);
-
-    }
-
-    private void clearIndex(GraphDatabaseService gds, Map<String, Object> result) {
-        IndexManager indexManager = gds.index();
-        result.put("node-indexes", Arrays.asList(indexManager.nodeIndexNames()));
-        result.put("relationship-indexes", Arrays.asList(indexManager.relationshipIndexNames()));
-        for (String ix : indexManager.nodeIndexNames()) {
-            indexManager.forNodes(ix).delete();
-        }
-        for (String ix : indexManager.relationshipIndexNames()) {
-            indexManager.forRelationships(ix).delete();
-        }
-    }
-
 }
