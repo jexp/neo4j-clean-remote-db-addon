@@ -47,7 +47,7 @@ public class DeleteDatabaseTest {
 
     @Before
     public void cleanDb() {
-        new Neo4jDatabaseCleaner(getGraphDb()).cleanDb();
+        neoServer.cleanDb();
     }
 
     private AbstractGraphDatabase getGraphDb() {

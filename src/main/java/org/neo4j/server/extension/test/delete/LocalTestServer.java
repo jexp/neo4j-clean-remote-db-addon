@@ -2,6 +2,7 @@ package org.neo4j.server.extension.test.delete;
 
 import org.junit.BeforeClass;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.server.AddressResolver;
 import org.neo4j.server.NeoServerWithEmbeddedWebServer;
 import org.neo4j.server.database.Database;
@@ -79,5 +80,14 @@ public class LocalTestServer {
 
     public URI baseUri() {
         return neoServer.baseUri();
+    }
+
+    public void cleanDb() {
+        Neo4jDatabaseCleaner cleaner = new Neo4jDatabaseCleaner(getGraphDatabase());
+        cleaner.cleanDb();
+    }
+
+    public AbstractGraphDatabase getGraphDatabase() {
+        return getDatabase().graph;
     }
 }
