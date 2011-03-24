@@ -10,6 +10,7 @@ import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.kernel.AbstractGraphDatabase;
+import org.neo4j.server.extension.test.delete.LocalTestServer;
 import org.neo4j.server.extension.test.delete.Neo4jDatabaseCleaner;
 import org.neo4j.server.modules.RESTApiModule;
 import org.neo4j.server.modules.ThirdPartyJAXRSModule;
@@ -27,32 +28,15 @@ import static org.junit.Assert.assertEquals;
  * @since 02.03.11
  */
 public class DeleteDatabaseTest {
-    protected static NeoServerWithEmbeddedWebServer neoServer;
-    private static final int PORT = 7473;
-    private static final String HOSTNAME = "localhost";
+    private static LocalTestServer neoServer = new LocalTestServer().withPropertiesFile("test-db.properties");
+
     private static final int MANY_NODES = 1500;
     private static final int FEW_NODES = 500;
+
     private static final String CONTEXT_PATH = "cleandb";
 
     @BeforeClass
     public static void startServerWithACleanDb() {
-        URL url = DeleteDatabaseTest.class.getResource("/test-db.properties");
-        neoServer = new NeoServerWithEmbeddedWebServer(new AddressResolver() {
-            @Override
-            public String getHostname() {
-                return HOSTNAME;
-            }
-        }, new StartupHealthCheck(), new File(url.getPath()), new Jetty6WebServer()) {
-            protected void registerServerModules() {
-                registerModule(RESTApiModule.class);
-                registerModule(ThirdPartyJAXRSModule.class);
-            }
-
-            @Override
-            protected int getWebServerPort() {
-                return PORT;
-            }
-        };
         neoServer.start();
     }
 

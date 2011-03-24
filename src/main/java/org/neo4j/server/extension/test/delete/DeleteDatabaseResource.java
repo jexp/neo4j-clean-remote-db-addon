@@ -51,6 +51,7 @@ public class DeleteDatabaseResource {
     public Response cleanDb(@PathParam("key") String deleteKey) {
         AbstractGraphDatabase graph = database.graph;
         String configKey = config.getString(CONFIG_DELETE_AUTH_KEY);
+
         if (deleteKey == null || configKey == null || !deleteKey.equals(configKey)) {
             return Response.status(Status.UNAUTHORIZED).build();
         }
