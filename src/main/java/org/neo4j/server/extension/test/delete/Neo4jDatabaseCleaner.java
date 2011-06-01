@@ -1,6 +1,5 @@
 package org.neo4j.server.extension.test.delete;
 
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
@@ -23,11 +22,14 @@ public class Neo4jDatabaseCleaner {
     }
 
     public Map<String, Object> cleanDb() {
+        return cleanDb(Long.MAX_VALUE);
+    }
+    public Map<String, Object> cleanDb(long maxNodesToDelete) {
         Map<String, Object> result = new HashMap<String, Object>();
         Transaction tx = graph.beginTx();
         try {
-            removeNodes(result);
             clearIndex(result);
+            removeNodes(result,maxNodesToDelete);
             tx.success();
         } finally {
             tx.finish();
@@ -35,11 +37,11 @@ public class Neo4jDatabaseCleaner {
         return result;
     }
 
-    private void removeNodes(Map<String, Object> result) {
+    private void removeNodes(Map<String, Object> result, long maxNodesToDelete) {
         Node refNode = graph.getReferenceNode();
-        int nodes = 0, relationships = 0;
+        long nodes = 0, relationships = 0;
         for (Node node : graph.getAllNodes()) {
-            for (Relationship rel : node.getRelationships(Direction.OUTGOING)) {
+            for (Relationship rel : node.getRelationships()) {
                 rel.delete();
                 relationships++;
             }
@@ -47,7 +49,9 @@ public class Neo4jDatabaseCleaner {
                 node.delete();
                 nodes++;
             }
+            if (nodes >= maxNodesToDelete) break;
         }
+        result.put("maxNodesToDelete", maxNodesToDelete);
         result.put("nodes", nodes);
         result.put("relationships", relationships);
 

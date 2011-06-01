@@ -10,7 +10,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
-import org.neo4j.graphdb.*;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.server.database.Database;
@@ -34,6 +33,7 @@ import java.util.logging.Logger;
 public class DeleteDatabaseResource {
 
     private static final String CONFIG_DELETE_AUTH_KEY = "org.neo4j.server.thirdparty.delete.key";
+    public static final long MAX_NODES_TO_DELETE = 1000;
     private final Database database;
     private ResourceConfig resourceConfig;
     private Configuration config;
@@ -56,17 +56,15 @@ public class DeleteDatabaseResource {
             return Response.status(Status.UNAUTHORIZED).build();
         }
         try {
-            long nodes = getNumberOfNodes(graph);
-            Map<String, Object> result = nodes > 1000 ? cleanDbDirectory(database) : new Neo4jDatabaseCleaner(graph).cleanDb();
+            Map<String, Object> result = new Neo4jDatabaseCleaner(graph).cleanDb(MAX_NODES_TO_DELETE);
+            if ((Long)result.get("nodes")>=MAX_NODES_TO_DELETE) {
+                result.putAll(cleanDbDirectory(database));
+            }
             log.warning("Deleted Database: " + result);
             return Response.status(Status.OK).entity(JSONObject.toJSONString(result)).build();
         } catch (Exception e) {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(JSONValue.toJSONString(e.getMessage())).build();
         }
-    }
-
-    private long getNumberOfNodes(AbstractGraphDatabase graph) {
-        return graph.getConfig().getGraphDbModule().getNodeManager().getNumberOfIdsInUse(Node.class);
     }
 
     private Map<String, Object> cleanDbDirectory(Database database) throws IOException {

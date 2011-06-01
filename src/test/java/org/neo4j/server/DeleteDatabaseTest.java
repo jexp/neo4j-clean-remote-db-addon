@@ -6,22 +6,21 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mortbay.util.ajax.JSON;
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.server.extension.test.delete.LocalTestServer;
-import org.neo4j.server.extension.test.delete.Neo4jDatabaseCleaner;
-import org.neo4j.server.modules.RESTApiModule;
-import org.neo4j.server.modules.ThirdPartyJAXRSModule;
-import org.neo4j.server.startup.healthcheck.StartupHealthCheck;
-import org.neo4j.server.web.Jetty6WebServer;
 
-import java.io.File;
-import java.net.URL;
+import java.util.Map;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author mh
@@ -77,6 +76,20 @@ public class DeleteDatabaseTest {
         assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(1, getNumberOfNodes(getGraphDb()));
     }
+
+    @Test
+    public void multipleDeletesWithFewNodesDontDeleteDirectories() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            createData(getGraphDb(), FEW_NODES);
+            assertEquals(FEW_NODES + 1, getNumberOfNodes(getGraphDb()));
+            ClientResponse response = Client.create().resource(createDeleteURI("secret-key")).delete(ClientResponse.class);
+            final Map result = (Map) JSON.parse(response.getEntity(String.class));
+            assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
+            assertEquals(1, getNumberOfNodes(getGraphDb()));
+            assertFalse(result.containsKey("store-dir"));
+        }
+    }
+
     @Test
     public void deleteWithManyNodes() throws Exception {
         createData(getGraphDb(), MANY_NODES);
@@ -93,16 +106,20 @@ public class DeleteDatabaseTest {
     private void createData(AbstractGraphDatabase db, int max) {
         Transaction tx = db.beginTx();
         try {
+            final IndexManager indexManager = db.index();
             Node[] nodes = new Node[max];
             for (int i = 0; i < max; i++) {
                 nodes[i] = db.createNode();
+                final Index<Node> index = indexManager.forNodes("node_index_" + String.valueOf(i % 5));
+                index.add(nodes[i],"ID",i);
             }
             Random random = new Random();
             for (int i = 0; i < max * 2; i++) {
-                int index = random.nextInt(max);
-                Node n1 = nodes[index];
-                Node n2 = nodes[(index + 1 + random.nextInt(max - 1)) % max];
-                n1.createRelationshipTo(n2, DynamicRelationshipType.withName("TEST_" + i));
+                int from = random.nextInt(max);
+                final int to = (from + 1 + random.nextInt(max - 1)) % max;
+                final Relationship relationship = nodes[from].createRelationshipTo(nodes[to], DynamicRelationshipType.withName("TEST_" + i));
+                final Index<Relationship> index = indexManager.forRelationships("rel_index_" + String.valueOf(i % 5));
+                index.add(relationship, "ID", i);
             }
             tx.success();
         } finally {
