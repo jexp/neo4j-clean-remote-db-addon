@@ -14,7 +14,7 @@
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.6.1</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <neo4j.version>1.4.M03</neo4j.version>
+        <neo4j.version>1.4.M04</neo4j.version>
         <com.sun.jersey.version>1.4</com.sun.jersey.version>
     </properties>
 
@@ -74,6 +74,14 @@
               <exclusion>
                   <groupId>org.neo4j</groupId>
                   <artifactId>neo4j</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.neo4j</groupId>
+                  <artifactId>neo4j-com</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.neo4j</groupId>
+                  <artifactId>neo4j-backup</artifactId>
               </exclusion>
               <exclusion>
                   <groupId>org.mortbay.jetty</groupId>
