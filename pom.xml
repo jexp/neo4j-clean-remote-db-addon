@@ -4,7 +4,7 @@
 
     <groupId>org.neo4j</groupId>
     <artifactId>test-delete-db-extension</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.4</version>
     <packaging>jar</packaging>
 
     <name>Neo4j Server Extension - Delete Database for Testing</name>
@@ -14,7 +14,7 @@
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.6.1</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <neo4j.version>1.4.M04</neo4j.version>
+        <neo4j.version>1.4</neo4j.version>
         <com.sun.jersey.version>1.4</com.sun.jersey.version>
     </properties>
 
