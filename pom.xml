@@ -100,10 +100,6 @@
                   <artifactId>jackson-jaxrs</artifactId>
               </exclusion>
               <exclusion>
-                  <groupId>org.codehaus.jackson</groupId>
-                  <artifactId>jackson-mapper-asl</artifactId>
-              </exclusion>
-              <exclusion>
                   <groupId>de.huxhorn.lilith</groupId>
                   <artifactId>de.huxhorn.lilith.3rdparty.rrd4j</artifactId>
               </exclusion>
@@ -141,11 +137,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.json-simple</groupId>
-            <artifactId>json-simple</artifactId>
-            <version>1.1</version>
         </dependency>
     </dependencies>
 

@@ -8,11 +8,10 @@ package org.neo4j.server.extension.test.delete;
 import com.sun.jersey.api.core.ResourceConfig;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.server.database.Database;
+import org.neo4j.server.rest.domain.JsonHelper;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
@@ -61,9 +60,9 @@ public class DeleteDatabaseResource {
                 result.putAll(cleanDbDirectory(database));
             }
             log.warning("Deleted Database: " + result);
-            return Response.status(Status.OK).entity(JSONObject.toJSONString(result)).build();
+            return Response.status(Status.OK).entity(JsonHelper.createJsonFrom(result)).build();
         } catch (Exception e) {
-            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(JSONValue.toJSONString(e.getMessage())).build();
+            return Response.status(Status.INTERNAL_SERVER_ERROR).entity(JsonHelper.createJsonFrom(e.getMessage())).build();
         }
     }
 
