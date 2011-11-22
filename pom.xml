@@ -4,17 +4,16 @@
 
     <groupId>org.neo4j</groupId>
     <artifactId>test-delete-db-extension</artifactId>
-    <version>1.4</version>
+    <version>1.5</version>
     <packaging>jar</packaging>
 
     <name>Neo4j Server Extension - Delete Database for Testing</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.6.1</slf4j.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <neo4j.version>1.4</neo4j.version>
+        <neo4j.version>1.5</neo4j.version>
         <com.sun.jersey.version>1.4</com.sun.jersey.version>
     </properties>
 
@@ -94,10 +93,6 @@
               <exclusion>
                   <groupId>commons-configuration</groupId>
                   <artifactId>commons-configuration</artifactId>
-              </exclusion>
-              <exclusion>
-                  <groupId>org.codehaus.jackson</groupId>
-                  <artifactId>jackson-jaxrs</artifactId>
               </exclusion>
               <exclusion>
                   <groupId>de.huxhorn.lilith</groupId>
