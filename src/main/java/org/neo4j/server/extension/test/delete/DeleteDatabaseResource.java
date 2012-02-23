@@ -69,7 +69,7 @@ public class DeleteDatabaseResource {
     private Map<String, Object> cleanDbDirectory(Database database) throws IOException {
         String storeDir = database.graph.getStoreDir();
         Map params = getAndFilterParams();
-        database.shutdown();
+        database.graph.shutdown();
 
         Map<String, Object> result = removeDirectory(storeDir);
 
