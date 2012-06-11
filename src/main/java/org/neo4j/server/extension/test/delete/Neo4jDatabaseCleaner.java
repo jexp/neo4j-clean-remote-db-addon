@@ -8,6 +8,7 @@ import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.kernel.AbstractGraphDatabase;
+import org.neo4j.kernel.GraphDatabaseAPI;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -19,9 +20,9 @@ import java.util.Map;
  * @since 02.03.11
  */
 public class Neo4jDatabaseCleaner {
-    private AbstractGraphDatabase graph;
+    private GraphDatabaseAPI graph;
 
-    public Neo4jDatabaseCleaner(AbstractGraphDatabase graph) {
+    public Neo4jDatabaseCleaner(GraphDatabaseAPI graph) {
         this.graph = graph;
     }
 

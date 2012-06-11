@@ -14,6 +14,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.kernel.AbstractGraphDatabase;
+import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.server.extension.test.delete.LocalTestServer;
 
 import java.util.Map;
@@ -49,11 +50,11 @@ public class DeleteDatabaseTest {
         neoServer.cleanDb();
     }
 
-    private AbstractGraphDatabase getGraphDb() {
+    private GraphDatabaseAPI getGraphDb() {
         return neoServer.getDatabase().graph;
     }
 
-    private long getNumberOfNodes(AbstractGraphDatabase graph) {
+    private long getNumberOfNodes(GraphDatabaseAPI graph) {
         long count=0;
         for (Node node : graph.getAllNodes()) {
             count++;
@@ -103,7 +104,7 @@ public class DeleteDatabaseTest {
         return String.format(neoServer.baseUri().toString()  + "%s/%s", CONTEXT_PATH, key);
     }
 
-    private void createData(AbstractGraphDatabase db, int max) {
+    private void createData(GraphDatabaseAPI db, int max) {
         Transaction tx = db.beginTx();
         try {
             final IndexManager indexManager = db.index();
