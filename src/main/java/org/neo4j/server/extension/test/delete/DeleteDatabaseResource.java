@@ -10,6 +10,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.kernel.AbstractGraphDatabase;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.GraphDatabaseAPI;
 import org.neo4j.server.database.Database;
 import org.neo4j.server.rest.domain.JsonHelper;
 
@@ -48,7 +49,7 @@ public class DeleteDatabaseResource {
     @Path("/{key}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response cleanDb(@PathParam("key") String deleteKey) {
-        AbstractGraphDatabase graph = database.graph;
+        GraphDatabaseAPI graph = database.graph;
         String configKey = config.getString(CONFIG_DELETE_AUTH_KEY);
 
         if (deleteKey == null || configKey == null || !deleteKey.equals(configKey)) {
@@ -68,13 +69,11 @@ public class DeleteDatabaseResource {
 
     private Map<String, Object> cleanDbDirectory(Database database) throws IOException {
         String storeDir = database.graph.getStoreDir();
-        Map params = getAndFilterParams();
+        
         database.graph.shutdown();
-
         Map<String, Object> result = removeDirectory(storeDir);
 
-        database.graph = new EmbeddedGraphDatabase(storeDir,params);
-
+        database.graph = new EmbeddedGraphDatabase(storeDir, database.graph.getKernelData().getConfigParams());
         return result;
     }
 
@@ -85,19 +84,5 @@ public class DeleteDatabaseResource {
         result.put("size", FileUtils.sizeOfDirectory(dir));
         FileUtils.deleteDirectory(dir);
         return result;
-    }
-
-    private Map getAndFilterParams() {
-        Map params = database.graph.getConfig().getParams();
-        for (Iterator param = params.entrySet().iterator(); param.hasNext();) {
-            Map.Entry entry = (Map.Entry) param.next();
-            Object value = entry.getValue();
-            if (entry.getKey() instanceof String && (value instanceof String || value instanceof Number || value instanceof Boolean)) {
-                continue;
-            }
-            param.remove();
-        }
-        System.out.println("params = " + params);
-        return params;
     }
 }
