@@ -5,7 +5,6 @@ package org.neo4j.server.extension.test.delete;
  * @since 27.02.11
  */
 
-import com.sun.jersey.api.core.ResourceConfig;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.neo4j.kernel.AbstractGraphDatabase;
@@ -25,9 +24,10 @@ import javax.ws.rs.core.Response.Status;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import static org.neo4j.server.configuration.Configurator.DATABASE_LOCATION_PROPERTY_KEY;
 
 @Path("/")
 public class DeleteDatabaseResource {
@@ -35,13 +35,11 @@ public class DeleteDatabaseResource {
     private static final String CONFIG_DELETE_AUTH_KEY = "org.neo4j.server.thirdparty.delete.key";
     public static final long MAX_NODES_TO_DELETE = 1000;
     private final Database database;
-    private ResourceConfig resourceConfig;
     private Configuration config;
     private Logger log = Logger.getLogger(DeleteDatabaseResource.class.getName());
 
-    public DeleteDatabaseResource(@Context Database database, @Context ResourceConfig resourceConfig, @Context Configuration config) {
+    public DeleteDatabaseResource(@Context Database database, @Context Configuration config) {
         this.database = database;
-        this.resourceConfig = resourceConfig;
         this.config = config;
     }
 
@@ -49,7 +47,7 @@ public class DeleteDatabaseResource {
     @Path("/{key}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response cleanDb(@PathParam("key") String deleteKey) {
-        GraphDatabaseAPI graph = database.graph;
+        GraphDatabaseAPI graph = database.getGraph();
         String configKey = config.getString(CONFIG_DELETE_AUTH_KEY);
 
         if (deleteKey == null || configKey == null || !deleteKey.equals(configKey)) {
@@ -62,18 +60,24 @@ public class DeleteDatabaseResource {
             }
             log.warning("Deleted Database: " + result);
             return Response.status(Status.OK).entity(JsonHelper.createJsonFrom(result)).build();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return Response.status(Status.INTERNAL_SERVER_ERROR).entity(JsonHelper.createJsonFrom(e.getMessage())).build();
         }
     }
 
-    private Map<String, Object> cleanDbDirectory(Database database) throws IOException {
-        String storeDir = database.graph.getStoreDir();
-        
-        database.graph.shutdown();
+    private Map<String, Object> cleanDbDirectory(Database database) throws Throwable {
+        AbstractGraphDatabase graph = database.graph;
+        String storeDir = graph.getStoreDir();
+        if (storeDir == null) {
+            storeDir = config.getString(DATABASE_LOCATION_PROPERTY_KEY);
+        }
+        graph.shutdown();
         Map<String, Object> result = removeDirectory(storeDir);
 
-        database.graph = new EmbeddedGraphDatabase(storeDir, database.graph.getKernelData().getConfigParams());
+        // TODO wtf?
+        // database.graph = new EmbeddedGraphDatabase(storeDir, graph.getKernelData().getConfigParams());
+        database.start();
+
         return result;
     }
 
