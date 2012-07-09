@@ -14,8 +14,11 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.kernel.AbstractGraphDatabase;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.GraphDatabaseAPI;
-import org.neo4j.server.extension.test.delete.LocalTestServer;
+import org.neo4j.server.configuration.ServerConfigurator;
+import org.neo4j.server.configuration.ThirdPartyJaxRsPackage;
+import org.neo4j.server.extension.test.delete.Neo4jDatabaseCleaner;
 
 import java.util.Map;
 import java.util.Random;
@@ -28,16 +31,24 @@ import static org.junit.Assert.assertFalse;
  * @since 02.03.11
  */
 public class DeleteDatabaseTest {
-    private static LocalTestServer neoServer = new LocalTestServer().withPropertiesFile("test-db.properties");
-
     private static final int MANY_NODES = 1500;
     private static final int FEW_NODES = 500;
 
     private static final String CONTEXT_PATH = "cleandb";
+    private static AbstractGraphDatabase graphDatabase;
+    private static NeoServer neoServer;
 
     @BeforeClass
     public static void startServerWithACleanDb() {
-        neoServer.start();
+        graphDatabase = new EmbeddedGraphDatabase("target/db1");
+
+        ServerConfigurator config = new ServerConfigurator(graphDatabase);
+        config.configuration().setProperty("org.neo4j.server.thirdparty.delete.key", "secret-key");
+        config.getThirdpartyJaxRsClasses().add(new ThirdPartyJaxRsPackage("org.neo4j.server.extension.test.delete", "/cleandb"));
+
+        WrappingNeoServerBootstrapper bootstrapper = new WrappingNeoServerBootstrapper(graphDatabase, config);
+        bootstrapper.start();
+        neoServer = bootstrapper.getServer();
     }
 
     @AfterClass
@@ -47,15 +58,16 @@ public class DeleteDatabaseTest {
 
     @Before
     public void cleanDb() {
-        neoServer.cleanDb();
+        Neo4jDatabaseCleaner cleaner = new Neo4jDatabaseCleaner(graphDatabase);
+        cleaner.cleanDb();
     }
 
     private GraphDatabaseAPI getGraphDb() {
-        return neoServer.getDatabase().graph;
+        return graphDatabase;
     }
 
     private long getNumberOfNodes(GraphDatabaseAPI graph) {
-        long count=0;
+        long count = 0;
         for (Node node : graph.getAllNodes()) {
             count++;
         }
@@ -72,7 +84,7 @@ public class DeleteDatabaseTest {
     @Test
     public void deleteWithFewNodes() throws Exception {
         createData(getGraphDb(), FEW_NODES);
-        assertEquals(FEW_NODES +1, getNumberOfNodes(getGraphDb()));
+        assertEquals(FEW_NODES + 1, getNumberOfNodes(getGraphDb()));
         ClientResponse response = Client.create().resource(createDeleteURI("secret-key")).delete(ClientResponse.class);
         assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
         assertEquals(1, getNumberOfNodes(getGraphDb()));
@@ -97,7 +109,7 @@ public class DeleteDatabaseTest {
         assertEquals(MANY_NODES+1, getNumberOfNodes(getGraphDb()));
         ClientResponse response = Client.create().resource(createDeleteURI("secret-key")).delete(ClientResponse.class);
         assertEquals(ClientResponse.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals(1, getNumberOfNodes(getGraphDb()));
+        assertEquals(0, getNumberOfNodes(getGraphDb()));
     }
 
     private String createDeleteURI(String key) {
